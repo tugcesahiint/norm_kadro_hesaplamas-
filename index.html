@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Norm Kadro Hesaplama Aracı</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f6f9;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      background: #121212;
+      color: #eee;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      padding: 10px 20px;
+      background: #007BFF;
+    }
+    .topbar button {
+      background: #fff;
+      color: #007BFF;
+      padding: 6px 12px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    h1 {
+      text-align: center;
+      margin: 30px 0;
+    }
+    section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+    body.dark section {
+      background: #1e1e1e;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      color: #000;
+    }
+    body.dark input, body.dark select, body.dark textarea {
+      background: #2b2b2b;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    button.main-btn {
+      width: 100%;
+      background: #28a745;
+      color: white;
+      font-size: 16px;
+      padding: 12px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #eafaf1;
+      border-left: 5px solid #28a745;
+      border-radius: 4px;
+    }
+    body.dark .result {
+      background: #223322;
+      border-left-color: #4caf50;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button onclick="toggleDarkMode()">🌙 Gece / ☀️ Gündüz</button>
+  </div>
+  <div class="container">
+    <h1>Norm Kadro Hesaplama Aracı</h1>
+
+    <section>
+      <h2>1. Çalışan Kapasitesi</h2>
+      <label>Günlük Çalışma Süresi (dk):</label>
+      <input type="number" id="dailyCapacity" value="480" />
+      <label>Haftalık Çalışma Günü:</label>
+      <input type="number" id="weeklyDays" value="5" />
+      <label>Yıllık Çalışma Günü:</label>
+      <input type="number" id="yearlyWorkDays" value="228" />
+      <label>Verimlilik Oranı (%):</label>
+      <input type="number" id="efficiencyRate" value="100" />
+    </section>
+
+    <section>
+      <h2>2. Görevler</h2>
+      <div id="taskContainer"></div>
+      <button class="main-btn" onclick="addTask()">+ Görev Ekle</button>
+    </section>
+
+    <button class="main-btn" onclick="calculateFinal()">HESAPLA</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    let taskCount = 0;
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+
+    function addTask() {
+      taskCount++;
+      const container = document.getElementById("taskContainer");
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <fieldset style="margin-top:20px; border: 1px solid #ccc; padding: 15px; border-radius: 6px;">
+          <legend><b>Görev ${taskCount}</b></legend>
+          <label>Açıklama:</label>
+          <textarea id="desc_${taskCount}"></textarea>
+          <label>Görev Süresi (dk):</label>
+          <input type="number" id="duration_${taskCount}" value="15" />
+          <label>Tekrar Sayısı:</label>
+          <input type="number" id="repeat_${taskCount}" value="1" />
+          <label>Dönem:</label>
+          <select id="period_${taskCount}">
+            <option value="daily">Günlük</option>
+            <option value="weekly">Haftalık</option>
+            <option value="monthly">Aylık</option>
+            <option value="yearly">Yıllık</option>
+          </select>
+        </fieldset>
+      `;
+      container.appendChild(div);
+    }
+
+    function calculateFinal() {
+      const dailyCap = parseFloat(document.getElementById("dailyCapacity").value);
+      const weeklyDays = parseFloat(document.getElementById("weeklyDays").value);
+      const yearlyDays = parseFloat(document.getElementById("yearlyWorkDays").value);
+      const efficiency = parseFloat(document.getElementById("efficiencyRate").value) / 100;
+
+      const dailyMax = dailyCap * efficiency;
+      const weeklyMax = dailyMax * weeklyDays;
+      const monthlyMax = (yearlyDays / 12) * dailyMax;
+      const yearlyMax = dailyMax * yearlyDays;
+
+      let dailyLoad = 0, weeklyLoad = 0, monthlyLoad = 0, yearlyLoad = 0;
+
+      for (let i = 1; i <= taskCount; i++) {
+        const duration = parseFloat(document.getElementById(`duration_${i}`).value);
+        const repeat = parseFloat(document.getElementById(`repeat_${i}`).value);
+        const period = document.getElementById(`period_${i}`).value;
+
+        if (period === "daily") {
+          dailyLoad += duration * repeat;
+          yearlyLoad += duration * repeat * yearlyDays;
+        } else if (period === "weekly") {
+          weeklyLoad += duration * repeat;
+          yearlyLoad += duration * repeat * 52;
+        } else if (period === "monthly") {
+          monthlyLoad += duration * repeat;
+          yearlyLoad += duration * repeat * 12;
+        } else if (period === "yearly") {
+          yearlyLoad += duration * repeat;
+        }
+      }
+
+      const kadro = (yearlyLoad / yearlyMax).toFixed(2);
+
+      document.getElementById("result").innerHTML = `
+        <b>Toplam Çalışan Kapasitesi:</b><br>
+        Günlük: ${Math.round(dailyMax)} dk<br>
+        Haftalık: ${Math.round(weeklyMax)} dk<br>
+        Aylık: ${Math.round(monthlyMax)} dk<br>
+        Yıllık: ${Math.round(yearlyMax)} dk<br><br>
+        <b>Toplam Görev Yükü:</b><br>
+        Günlük: ${dailyLoad} dk<br>
+        Haftalık: ${weeklyLoad} dk<br>
+        Aylık: ${monthlyLoad} dk<br>
+        Yıllık: ${Math.round(yearlyLoad)} dk<br><br>
+        <b>Önerilen Norm Kadro Sayısı:</b> ${kadro} kişi
+      `;
+    }
+
+    window.onload = addTask;
+  </script>
+</body>
+</html>
