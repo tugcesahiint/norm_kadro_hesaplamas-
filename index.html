@@ -65,7 +65,9 @@
       background: #fff;
       color: #000;
     }
-    body.dark input, body.dark select, body.dark textarea {
+    body.dark input,
+    body.dark select,
+    body.dark textarea {
       background: #2b2b2b;
       color: #fff;
       border: 1px solid #555;
@@ -91,6 +93,22 @@
     body.dark .result {
       background: #223322;
       border-left-color: #4caf50;
+    }
+    .task-summary {
+      padding: 10px;
+      background: #eef0f3;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #333;
+    }
+    body.dark .task-summary {
+      background: #2b2b2b;
+      color: #fff;
+    }
+    .task-form {
+      display: none;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -133,26 +151,39 @@
     function addTask() {
       taskCount++;
       const container = document.getElementById("taskContainer");
-      const div = document.createElement("div");
-      div.innerHTML = `
-        <fieldset style="margin-top:20px; border: 1px solid #ccc; padding: 15px; border-radius: 6px;">
-          <legend><b>Görev ${taskCount}</b></legend>
+
+      const wrapper = document.createElement("div");
+      wrapper.classList.add("task-wrapper");
+      wrapper.innerHTML = `
+        <div class="task-summary" onclick="this.nextElementSibling.style.display = (this.nextElementSibling.style.display === 'none' ? 'block' : 'none')">
+          <span id="taskLabel_${taskCount}"><b>Görev ${taskCount}</b> - Henüz bilgi girilmedi</span>
+        </div>
+        <div class="task-form">
           <label>Açıklama:</label>
-          <textarea id="desc_${taskCount}"></textarea>
+          <textarea id="desc_${taskCount}" oninput="updateSummary(${taskCount})"></textarea>
           <label>Görev Süresi (dk):</label>
-          <input type="number" id="duration_${taskCount}" value="15" />
+          <input type="number" id="duration_${taskCount}" value="15" oninput="updateSummary(${taskCount})" />
           <label>Tekrar Sayısı:</label>
-          <input type="number" id="repeat_${taskCount}" value="1" />
+          <input type="number" id="repeat_${taskCount}" value="1" oninput="updateSummary(${taskCount})" />
           <label>Dönem:</label>
-          <select id="period_${taskCount}">
+          <select id="period_${taskCount}" onchange="updateSummary(${taskCount})">
             <option value="daily">Günlük</option>
             <option value="weekly">Haftalık</option>
             <option value="monthly">Aylık</option>
             <option value="yearly">Yıllık</option>
           </select>
-        </fieldset>
+        </div>
       `;
-      container.appendChild(div);
+      container.appendChild(wrapper);
+    }
+
+    function updateSummary(id) {
+      const desc = document.getElementById(`desc_${id}`).value.trim().substring(0, 20);
+      const dur = document.getElementById(`duration_${id}`).value;
+      const rep = document.getElementById(`repeat_${id}`).value;
+      const per = document.getElementById(`period_${id}`).value;
+
+      document.getElementById(`taskLabel_${id}`).innerHTML = `<b>Görev ${id}</b> - ${desc || 'Görev'} (${dur}dk × ${rep} ${per})`;
     }
 
     function calculateFinal() {
